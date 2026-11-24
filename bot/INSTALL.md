@@ -47,7 +47,7 @@ apt install -y fonts-noto-cjk fonts-dejavu && fc-cache -f
 
 ```bash
 mkdir -p /opt/zovexsub
-git clone -b ccr-7e9ba85e-p9u399 https://github.com/davidggjg/zovex-android /opt/zovexsub/repo
+git clone https://github.com/davidggjg/EncodingBot /opt/zovexsub/repo
 ln -s /opt/zovexsub/repo/bot /opt/zovexsub/bot
 ```
 
