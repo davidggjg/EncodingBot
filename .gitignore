@@ -1,7 +1,10 @@
-node_modules/
-android/app/google-services.json
-android/app/zovex-release.keystore
-android/.gradle/
-android/app/build/
-*.keystore
-*.jks
+.env
+allowlist.json
+*.session
+*.session-journal
+__pycache__/
+work/
+spell/
+recordings.json
+recordings.tmp
+live-covers/

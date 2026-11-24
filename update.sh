@@ -14,10 +14,11 @@
 set -uo pipefail
 
 ROOT=${ZOVEX_ROOT:-/opt/zovexsub}
-REPO="$ROOT/repo"
-[[ -d "$REPO/.git" ]] || REPO="$ROOT"
-BOT="$REPO/bot"
-[[ -d "$BOT" ]] || BOT="$ROOT/bot"
+# תיקיית הבוט היא תמיד המקום של הסקריפט הזה. המאגר הוא מה שגיט אומר
+# שהוא — כך זה עובד גם כשהבוט יושב בשורש של מאגר משלו (EncodingBot),
+# וגם במבנה הישן שבו הוא היה תיקיית bot/ בתוך מאגר אחר
+BOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO="$(git -C "$BOT" rev-parse --show-toplevel 2>/dev/null || echo "$BOT")"
 VENV="$ROOT/venv"
 PY="$VENV/bin/python"
 PIP="$VENV/bin/pip"

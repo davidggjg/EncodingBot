@@ -47,7 +47,7 @@ apt install -y fonts-noto-cjk fonts-dejavu && fc-cache -f
 
 ```bash
 mkdir -p /opt/zovexsub
-git clone https://github.com/davidggjg/EncodingBot /opt/zovexsub/repo
+git clone https://github.com/davidggjg/EncodingBot /opt/zovexsub/repo/bot
 ln -s /opt/zovexsub/repo/bot /opt/zovexsub/bot
 ```
 

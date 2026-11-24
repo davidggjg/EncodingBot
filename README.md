@@ -35,7 +35,7 @@ fc-list | grep -i hebrew | head -3              # לוודא שיש פונט ע�
 
 # 2. הקוד
 sudo mkdir -p /opt/zovexsub && sudo chown "$USER" /opt/zovexsub
-git clone https://github.com/davidggjg/EncodingBot /opt/zovexsub/repo
+git clone https://github.com/davidggjg/EncodingBot /opt/zovexsub/repo/bot
 ln -s /opt/zovexsub/repo/bot /opt/zovexsub/bot
 
 # 3. סביבה וירטואלית
