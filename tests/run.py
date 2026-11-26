@@ -5777,6 +5777,40 @@ def _():
         assert not cleanup.mixed_word(fine), fine
 
 
+@check("ZIP כתוביות בכמה שפות: מקור אנגלית, גרסאות מוצמדות לפי זמן ומופיעות בפרומפט")
+def _():
+    import tempfile, zipfile
+    from zovexsub import multisub, srt, hebrew
+    from zovexsub.stt import Segment
+    root = Path(tempfile.mkdtemp())
+    files = {
+        "Movie.en.srt": "1\n00:00:01,000 --> 00:00:03,000\nAre you ready?\n",
+        "Movie.French.srt": "1\n00:00:01,100 --> 00:00:03,100\nTu es prête ?\n",
+        "Movie_ara.srt": "1\n00:00:00,900 --> 00:00:02,900\nهل أنتِ مستعدة؟\n",
+        "../evil.srt": "1\n00:00:01,000 --> 00:00:02,000\nhack\n",
+    }
+    bundle = root / "b.zip"
+    with zipfile.ZipFile(bundle, "w") as z:
+        for name, text in files.items():
+            z.writestr(name, text)
+    target = root / "w" / "given.srt"
+    target.parent.mkdir()
+    summary = multisub.unpack(bundle, target)
+    assert summary["*"] == "en" and "fr" in summary and "ar" in summary, summary
+    assert not (root / "evil.srt").exists()          # אין יציאה מהתיקייה
+    cues = srt.parse(srt.read_subtitle(target))
+    segs = [Segment(index=i, start=c.start, end=c.end, text=c.text)
+            for i, c in enumerate(cues)]
+    multisub.attach(segs, target)
+    listing = hebrew._numbered(segs)
+    assert "fr: Tu es prête" in listing and "ar:" in listing, listing
+    moved = root / "w2" / "given.srt"
+    moved.parent.mkdir()
+    target.replace(moved)
+    multisub.move(target, moved)
+    assert multisub.refs_dir(moved).is_dir()
+
+
 def main() -> int:
     failed = 0
     for name, fn in CHECKS:

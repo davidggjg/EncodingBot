@@ -306,6 +306,9 @@ async def translate_given(source: Path, srt_path: Path, work: Path,
     segments = [Segment(index=i, start=cue.start, end=cue.end,
                         text=" ".join((cue.text or "").split()))
                 for i, cue in enumerate(cues)]
+    # גרסאות בשפות אחרות, אם המשתמש שלח ZIP — מוצמדות לכל שורה לפי זמן
+    from . import multisub
+    multisub.attach(segments, srt_path)
 
     # סריקת האודיו — רק לדוברים. כשל כאן אינו מפיל את העבודה: בלי
     # תוויות דובר התרגום עדיין רץ, רק שהמגדר חוזר להישען על ההקשר

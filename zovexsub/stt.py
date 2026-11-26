@@ -34,6 +34,8 @@ class Segment:
     words: list[Word] = field(default_factory=list)
     no_speech: float = 0.0
     speaker: str = ""        # מי דיבר, כשהספק מחזיר זיהוי דוברים
+    # אותה שורה בשפות אחרות (שפה ← טקסט), כשהמשתמש שלח ZIP של כתוביות
+    refs: dict = field(default_factory=dict)
 
 
 @dataclass

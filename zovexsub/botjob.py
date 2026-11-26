@@ -665,6 +665,8 @@ async def run(choice) -> None:
                     # הקובץ כבר הגיע תוך כדי ההורדה
                     srt_path = work / "given.srt"
                     shutil.move(str(early), srt_path)
+                    from . import multisub
+                    multisub.move(early, srt_path)
                     _waiting.pop(int(chat_id), None)
                     await screen.show("✅ ממשיך עם הכתוביות ששלחת.",
                                       force=True)
@@ -916,6 +918,28 @@ async def take_cover(chat_id, file_id: str) -> None:
                                     "התצוגה המקדימה של הסרטון.")
 
 
+async def _unpack_bundle(chat_id, found: Path, target: Path) -> bool:
+    """ZIP של כתוביות בכמה שפות: המקור ל-target, השאר כגרסאות. False אם לא ZIP."""
+    from . import multisub
+    if not multisub.is_zip(found):
+        return False
+    try:
+        summary = multisub.unpack(found, target)
+    except Exception as exc:  # noqa: BLE001
+        await localbot.say(chat_id, "❌ לא הצלחתי לפתוח את ה-ZIP.\n"
+                           + localbot.code(str(exc)))
+        raise
+    main = summary.pop("*")
+    extra = [multisub.NAMES.get(c, c) for c in summary if c != main]
+    await localbot.say(
+        chat_id,
+        f"📦 ZIP: מתרגם מ<b>{multisub.NAMES.get(main, main)}</b> "
+        f"({summary.get(main, 0)} כתוביות, התזמונים שלה נשמרים)"
+        + (f"\nגרסאות לעזרה במשמעות ובזכר/נקבה: {', '.join(extra)}" if extra
+           else "\nאין גרסאות נוספות בשפות אחרות"))
+    return True
+
+
 async def take_subtitle(chat_id, file_id: str, name: str) -> None:
     """קובץ כתוביות שהמשתמש שלח לעבודה שממתינה.
 
@@ -941,7 +965,8 @@ async def take_subtitle(chat_id, file_id: str, name: str) -> None:
         # יישאר ספק אם הוא נקלט
         holding = config.WORK_DIR / f"given-{chat}-{uuid.uuid4().hex[:6]}.srt"
         holding.parent.mkdir(parents=True, exist_ok=True)
-        srt_tools.normalize(found, holding)
+        if not await _unpack_bundle(chat_id, found, holding):
+            srt_tools.normalize(found, holding)
         _given[chat] = holding
         log.info("כתוביות התקבלו לפני סיום ההורדה (%s)", name)
         await localbot.say(chat_id, "✅ קיבלתי את הכתוביות. "
@@ -953,7 +978,8 @@ async def take_subtitle(chat_id, file_id: str, name: str) -> None:
     srt_path = work / "given.srt"
     # נורמליזציה כבר כאן: כל מי שקורא אחר כך מקבל UTF-8 ודאי, ואם
     # הקידוד מוזר המשתמש שומע על כך מיד ולא באמצע הצריבה
-    srt_tools.normalize(found, srt_path)
+    if not await _unpack_bundle(chat_id, found, srt_path):
+        srt_tools.normalize(found, srt_path)
     await localbot.say(chat_id, "✅ קיבלתי את הכתוביות.")
     await _after_subtitle(chat_id, source, srt_path, work,
                           _track.pop(chat, 0))

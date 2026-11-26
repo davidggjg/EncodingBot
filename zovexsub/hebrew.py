@@ -249,8 +249,10 @@ def _addressee_listing(segments: list[Segment], lines: list[str],
     rows = []
     for i in numbers:
         who = getattr(segments[i], "speaker", "") or "לא ידוע"
+        refs = getattr(segments[i], "refs", None) or {}
+        extra = "".join(f"\n[{i}] {code}: {text}" for code, text in refs.items())
         rows.append(f"[{i}] דובר: {who}\n"
-                    f"[{i}] מקור: {segments[i].text}\n"
+                    f"[{i}] מקור: {segments[i].text}{extra}\n"
                     f"[{i}] עברית: {lines[i]}")
     return "\n".join(rows)
 
@@ -323,7 +325,9 @@ async def enforce_addressee(segments: list[Segment], lines: list[str], notes: st
         # שורות אולפן אמיתיות שבהן פונים לאשה ולגבר. ההחלטה למי
         # פונים נעשית מההקשר וזה עובד; מה שחסר היה **איך** צורה
         # כזאת נשמעת כשמקצוען כותב אותה, ולא כמו ספר לימוד
-        prompt = pinned_genders(notes) + idiom.gender_guide() + f"""מסמך הנחיות:
+        guide = REFS_NOTE if any(getattr(segments[i], "refs", None)
+                                 for i in window) else ""
+        prompt = guide + pinned_genders(notes) + idiom.gender_guide() + f"""מסמך הנחיות:
 ---
 {_cap(notes, 12_000)}
 ---
@@ -1045,7 +1049,8 @@ async def _translate_all(segments: list[Segment], language: str, notes: str,
         # ביקש במפורש שזה לא יוסיף זמן לתרגום
         rules = idiom.guide()
 
-        prompt = f"""{pinned}{examples}{manner}{rules}מסמך הנחיות לסרטון הזה:
+        guide = REFS_NOTE if any(getattr(s, "refs", None) for s in window) else ""
+        prompt = f"""{guide}{pinned}{examples}{manner}{rules}מסמך הנחיות לסרטון הזה:
 ---
 {_cap(notes, 20_000)}
 ---
@@ -1473,7 +1478,18 @@ def _numbered(segs: list[Segment]) -> str:
         speaker = getattr(segment, "speaker", "")
         label = f" (דובר {speaker})" if speaker else ""
         rows.append(f"[{segment.index}]{label} {segment.text}")
+        for code, text in (getattr(segment, "refs", None) or {}).items():
+            rows.append(f"    ↳ {code}: {text}")
     return "\n".join(rows)
+
+
+REFS_NOTE = """מתחת לחלק מהשורות מופיעות (↳) גרסאות של **אותה שורה** בשפות אחרות,
+מכתוביות מקצועיות של אותו סרטון. תרגם מהמקור, אבל השתמש בהן כדי להבין
+את המשמעות, ובעיקר את המגדר: בצרפתית, בספרדית ובערבית צורות הפנייה, התארים
+והפעלים מסמנים אם מדברים אל גבר או אל אישה, ומי מדבר — "tu es prête",
+"estás lista" ו-"أنتِ" הם פנייה לאישה. כשהגרסאות מסכימות על מגדר — זה המגדר.
+
+"""
 
 
 def _window_text(segments: list[Segment], idx: int) -> str:
